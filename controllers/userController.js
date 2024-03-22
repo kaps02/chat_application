@@ -2,7 +2,14 @@
 const path = require('path');
 const bcrypt = require('bcrypt');
 const User = require('../models/userModel'); // Assuming User is exported from database.js
+const jwt = require('jsonwebtoken');
 
+// Function to generate JWT token
+exports.generateToken = (id) => {
+    const payload = { id: id };
+    const secretKey = 'secretkey';
+    return jwt.sign(payload, secretKey); // Signing the token with the payload and secret key
+};
 
 exports.getUser = (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'view', 'signup.html'));
@@ -45,7 +52,6 @@ exports.getLogin = (req, res) => {
 exports.postLogin = async (req, res) => {
     const { email, password } = req.body;
     try {
-        // Find user by email
         const user = await User.findOne({ where: { email } });
         if (!user) {
             console.log('User does not exist');
@@ -54,19 +60,18 @@ exports.postLogin = async (req, res) => {
 
         // Compare passwords
         const match = await bcrypt.compare(password, user.password);
-        if (match) {
-            // Generate token and send it in response
-            //const token = exports.generateToken(user.id , user.isPremiumUser);
-
-            console.log("Login successful");
-            res.status(200).json({ success: true, message: "User logged in successfully" });
-        } else {
+        if (!match) {
             console.log('Incorrect password');
-            res.status(401).json({ success: false, message: 'Incorrect password' });
+            return res.status(401).json({ success: false, message: 'Incorrect password' });
         }
+
+        // Generate token and send it in response
+        const token = exports.generateToken(user.id);
+        console.log("Login successful", token);
+        res.status(200).json({ success: true, message: "User logged in successfully", token });
+        
     } catch (err) {
         console.error('Error:', err);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
-
