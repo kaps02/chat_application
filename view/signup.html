@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup Page</title>
+    <title>signup</title>
 </head>
+
 <body>
     <form id="form">
         <label for="name">Name:
@@ -13,11 +14,13 @@
         <label for="email">Email:
             <input type="email" id="email" name="email" required>
         </label>
+        <label for="phone">Phone NO::
+            <input type="tel" id="phone" name="phone" required>
+        </label>
         <label for="password">Password:
             <input type="password" id="password" name="password" required>
         </label>
             <button type="submit" name="signup">signup</button>
-        <a href="/user/login" >Login</a>
     </form>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/signup.js"></script>
