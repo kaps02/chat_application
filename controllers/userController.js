@@ -17,9 +17,10 @@ exports.createUser = async (req, res) => {
          const existingUser = await User.findOne({ where: { email } });
          if (existingUser) {
              console.log("User already exists in the database");
-             return res.status(400).json({ success: false, message: 'User already exists' });
+               res.status(400).json({ success: false, message: 'User already exists' });
          }
-
+         else{
+            
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -27,6 +28,8 @@ exports.createUser = async (req, res) => {
         await User.create({ name, email, phone, password: hashedPassword });
         console.log("User created successfully");
         res.status(200).json({ success: true, message: 'User created successfully' });
+         }
+
     } catch (err) {
         console.error('Error:', err);
         res.status(500).json({ success: false, message: 'Internal server error in controller....' });
