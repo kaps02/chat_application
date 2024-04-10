@@ -1,7 +1,8 @@
 // controllers/userController.js
 const path = require('path');
 const bcrypt = require('bcrypt');
-const User = require('../models/userModel'); // Assuming User is exported from database.js
+const User = require('../models/userModel'); 
+const Chat = require('../models/chatModel'); 
 const jwt = require('jsonwebtoken');
 
 // Function to generate JWT token
@@ -75,3 +76,17 @@ exports.postLogin = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
+exports.getchat = async(req , res)=>{
+    res.sendFile('chat.html', { root: './view' });
+}
+
+
+exports.createChat = async (req, res) => {
+    // Create new user
+    console.log("...............................",req.user.id);
+    await Chat.create({ message:req.body.message, senderId:req.user.id, receiverId:2 });
+    console.log("chat created successfully");
+    res.status(200).json({ success: true, message: 'chat created successfully' });
+   
+   }

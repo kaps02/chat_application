@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .chat-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 400px;
+            overflow-y: scroll;
+        }
+
+        .input-box {
+            margin-top: 20px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: calc(100% - 70px);
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-wrap: break-word;
+        }
+
+        .dark-background {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .bright-background {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        #send {
+            text-align: center;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+    <div class="container">
+        <h2>Chat App</h2>
+        <div class="chat-box" id="chatBox">
+            <!-- Chat messages will be displayed here -->
+        </div>
+        <div class="input-box">
+            <input type="text" id="messageInput" placeholder="Type your message...">
+            <input type="submit" value="Send" id="send">
+        </div>
+    </div>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sendChat = document.getElementById('send');
+
+            sendChat.addEventListener('click', async (event) => {
+                event.preventDefault();
+                try {
+                    const messageInput = document.getElementById('messageInput');
+                    const message = messageInput.value;
+                    if (!message.trim()) return;
+
+                    const token = localStorage.getItem('token');
+                    console.log('sending message axios...');
+                    const response = await axios.post('/user/message', { message }
+                        , {headers: { 'Authorization': token }}
+                    );
+                    console.log('Chat message sent successfully:', response.data);
+
+                    if (response.status === 200) {
+                        //alert('Your chat stored successfully');
+                        sendMessage(message);
+                    } else {
+                        console.error('Chat message send failed');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    // Optionally, display an error message to the user
+                }
+            });
+        });
+
+
+        function sendMessage() {
+            console.log("we r in send message");
+            var messageInput = document.getElementById("messageInput");
+            var message = messageInput.value;
+            if (message.trim() !== "") {
+                var chatBox = document.getElementById("chatBox");
+                var messageElement = document.createElement("div");
+                messageElement.textContent = message;
+                messageElement.classList.add("message");
+                if (chatBox.childElementCount % 2 === 0) {
+                    messageElement.classList.add("dark-background");
+                } else {
+                    messageElement.classList.add("bright-background");
+                }
+
+
+                chatBox.appendChild(messageElement);
+                messageInput.value = "";
+                // Scroll to the bottom of the chat box
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+    </script>
+</body>
+
+</html>

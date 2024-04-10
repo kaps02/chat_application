@@ -16,8 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.status === 200) {
-
-                    alert("You Login Successfully");
+                    localStorage.setItem('token', response.data.token);
+                    
+                    alert(`${email} loged in successfully`);
+                    
                 } else {
                     console.error('Login failed');
                     // Optionally, display an error message to the user
