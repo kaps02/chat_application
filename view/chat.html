@@ -12,6 +12,27 @@
             padding: 0;
         }
 
+        /* CSS */
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .sender {
+            background-color: #333;
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .receiver {
+            background-color: #E5E5EA;
+            /* Light grey for receiver */
+        }
+
+
         .container {
             width: 80%;
             margin: 0 auto;
@@ -94,7 +115,45 @@
 
     <script>
 
+        const getChat = async () => {
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await axios.get('/user/api/chat', {
+                    headers: { 'Authorization': token }
+                });
+
+                const chatBox = document.getElementById('chatBox');
+
+                // Assuming messages are under response.data.messages
+                response.data.messages.forEach(message => {
+                    const messageElement = document.createElement('div');
+                    messageElement.textContent = message;
+                    messageElement.classList.add('message');
+
+                    // Add different classes for alternating message styles
+                    if (chatBox.childElementCount % 2 === 0) {
+                        messageElement.classList.add('sender');
+                    } else {
+                        messageElement.classList.add('receiver');
+                    }
+
+                    chatBox.appendChild(messageElement);
+                });
+
+                // Scroll to the bottom of the chat box
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                console.log('Chat messages retrieved successfully:', response.data.messages);
+            } catch (error) {
+                console.error('Error retrieving chat messages:', error);
+            }
+        };
+
+
+
         document.addEventListener('DOMContentLoaded', () => {
+            getChat();
             const sendChat = document.getElementById('send');
 
             sendChat.addEventListener('click', async (event) => {
@@ -106,8 +165,9 @@
 
                     const token = localStorage.getItem('token');
                     console.log('sending message axios...');
+
                     const response = await axios.post('/user/message', { message }
-                        , {headers: { 'Authorization': token }}
+                        , { headers: { 'Authorization': token } }
                     );
                     console.log('Chat message sent successfully:', response.data);
 

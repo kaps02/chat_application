@@ -85,8 +85,34 @@ exports.getchat = async(req , res)=>{
 exports.createChat = async (req, res) => {
     // Create new user
     console.log("...............................",req.user.id);
-    await Chat.create({ message:req.body.message, senderId:req.user.id, receiverId:2 });
+    await Chat.create({ message:req.body.message, senderId:req.user.id, receiverId:2 ,UserId :req.user.id });
     console.log("chat created successfully");
     res.status(200).json({ success: true, message: 'chat created successfully' });
    
    }
+
+
+   exports.readChat = async (req, res) => {
+    try {
+        const userId = req.user.id;
+ 
+        // Read chat messages from the database for the logged-in user where the user is the sender
+        const messages = await Chat.findAll({
+            where: {
+                senderId: userId
+            },
+            attributes: ['message'] // Select only the 'message' attribute
+        });
+ 
+        // Extract message content from the messages array
+        const chatMessages = messages.map(message => message.message);
+ 
+        console.log("Chat read successfully", chatMessages);
+        res.status(200).json({ success: true, messages: chatMessages });
+    } catch (error) {
+        console.error("Error reading chat:", error);
+        res.status(500).json({ success: false, message: 'Failed to read chat' });
+    }
+ }
+ 
+   

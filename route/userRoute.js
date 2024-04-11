@@ -10,6 +10,7 @@ router.post('/login' , user.postLogin);
 router.get('/login', user.getLogin);
 router.get('/chat' , user.getchat);
 router.get('/', user.getUser);
+router.get('/api/chat' , Authentication.authenticate , chat.readChat);
 
 router.post('/message' , Authentication.authenticate , chat.createChat);
 
