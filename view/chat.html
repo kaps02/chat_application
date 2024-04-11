@@ -115,100 +115,115 @@
 
     <script>
 
-        const getChat = async () => {
-            const token = localStorage.getItem('token');
+const MAX_MESSAGES_IN_LOCAL_STORAGE = 10;
 
-            try {
-                const response = await axios.get('/user/api/chat', {
-                    headers: { 'Authorization': token }
-                });
+// Function to update local storage with new messages, keeping only the most recent ones
+function updateLocalStorageWithNewMessage(newMessage) {
+    let storedMessages = JSON.parse(localStorage.getItem('messages')) || [];
 
-                const chatBox = document.getElementById('chatBox');
+    // Append the new message to the end of the array
+    storedMessages.push(newMessage);
 
-                // Assuming messages are under response.data.messages
-                response.data.messages.forEach(message => {
-                    const messageElement = document.createElement('div');
-                    messageElement.textContent = message;
-                    messageElement.classList.add('message');
+    // Keep only the most recent MAX_MESSAGES_IN_LOCAL_STORAGE messages
+    if (storedMessages.length > MAX_MESSAGES_IN_LOCAL_STORAGE) {
+        storedMessages = storedMessages.slice(storedMessages.length - MAX_MESSAGES_IN_LOCAL_STORAGE);
+    }
 
-                    // Add different classes for alternating message styles
-                    if (chatBox.childElementCount % 2 === 0) {
-                        messageElement.classList.add('sender');
-                    } else {
-                        messageElement.classList.add('receiver');
-                    }
+    // Update local storage with the modified array
+    localStorage.setItem('messages', JSON.stringify(storedMessages));
+}
 
-                    chatBox.appendChild(messageElement);
-                });
+// Function to retrieve messages from local storage
+function getMessagesFromLocalStorage() {
+    const messagesString = localStorage.getItem('messages');
+    return messagesString ? JSON.parse(messagesString) : [];
+}
 
-                // Scroll to the bottom of the chat box
-                chatBox.scrollTop = chatBox.scrollHeight;
+// Function to display messages on the frontend
+function displayMessages(messages) {
+    const chatBox = document.getElementById('chatBox');
+    chatBox.innerHTML = ''; // Clear previous messages
+    messages.forEach(message => {
+        const messageElement = document.createElement('div');
+        messageElement.textContent = message;
+        messageElement.classList.add('message');
+        if (chatBox.childElementCount % 2 === 0) {
+            messageElement.classList.add('dark-background');
+        } else {
+            messageElement.classList.add('bright-background');
+        }
+        chatBox.appendChild(messageElement);
+    });
+}
 
-                console.log('Chat messages retrieved successfully:', response.data.messages);
-            } catch (error) {
-                console.error('Error retrieving chat messages:', error);
-            }
-        };
 
+const getChat = async () => {
+    const token = localStorage.getItem('token');
 
-
-        document.addEventListener('DOMContentLoaded', () => {
-            getChat();
-            const sendChat = document.getElementById('send');
-
-            sendChat.addEventListener('click', async (event) => {
-                event.preventDefault();
-                try {
-                    const messageInput = document.getElementById('messageInput');
-                    const message = messageInput.value;
-                    if (!message.trim()) return;
-
-                    const token = localStorage.getItem('token');
-                    console.log('sending message axios...');
-
-                    const response = await axios.post('/user/message', { message }
-                        , { headers: { 'Authorization': token } }
-                    );
-                    console.log('Chat message sent successfully:', response.data);
-
-                    if (response.status === 200) {
-                        //alert('Your chat stored successfully');
-                        sendMessage(message);
-                    } else {
-                        console.error('Chat message send failed');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    // Optionally, display an error message to the user
-                }
-            });
-             // Call getChat every 1 second
-                setInterval(getChat, 20000);
+    try {
+        const response = await axios.get('/user/api/chat', {
+            headers: { 'Authorization': token }
         });
 
+        const chatBox = document.getElementById('chatBox');
+        const newMessages = response.data.messages;
 
-        function sendMessage() {
-            console.log("we r in send message");
-            var messageInput = document.getElementById("messageInput");
-            var message = messageInput.value;
-            if (message.trim() !== "") {
-                var chatBox = document.getElementById("chatBox");
-                var messageElement = document.createElement("div");
-                messageElement.textContent = message;
-                messageElement.classList.add("message");
-                if (chatBox.childElementCount % 2 === 0) {
-                    messageElement.classList.add("dark-background");
-                } else {
-                    messageElement.classList.add("bright-background");
-                }
+        // Update local storage with new messages
+        newMessages.forEach(message => {
+            updateLocalStorageWithNewMessage(message);
+        });
 
+        // Retrieve messages from local storage
+        const storedMessages = getMessagesFromLocalStorage();
 
-                chatBox.appendChild(messageElement);
-                messageInput.value = "";
+        // Display all messages (local storage + new messages) on the frontend
+        displayMessages(storedMessages);
+
+        console.log('Chat messages retrieved successfully:', response.data.messages);
+    } catch (error) {
+        console.error('Error retrieving chat messages:', error);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Call getChat initially to fetch messages and display them
+    getChat();
+
+    // Call getChat every 20 seconds
+    setInterval(getChat, 2000);
+
+    const sendChat = document.getElementById('send');
+
+    sendChat.addEventListener('click', async (event) => {
+        event.preventDefault();
+        try {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            const token = localStorage.getItem('token');
+            console.log('sending message axios...');
+
+            const response = await axios.post('/user/message', { message }, { headers: { 'Authorization': token } });
+            console.log('Chat message sent successfully:', response.data);
+
+            if (response.status === 200) {
+                // Clear message input
+                messageInput.value = '';
+
                 // Scroll to the bottom of the chat box
+                const chatBox = document.getElementById('chatBox');
                 chatBox.scrollTop = chatBox.scrollHeight;
+            } else {
+                console.error('Chat message send failed');
             }
+        } catch (error) {
+            console.error('Error:', error);
+            // Optionally, display an error message to the user
         }
+    });
+});
+
     </script>
 </body>
 
