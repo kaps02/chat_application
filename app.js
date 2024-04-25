@@ -7,6 +7,8 @@ const sequelize = require('./config/database');
 const cors = require('cors');
 const Chat = require('./models/chatModel');
 const User = require('./models/userModel');
+const Group = require('./models/groupModel');
+const GroupMember = require('./models/groupmemberModel');
 require('dotenv').config();
 
 
@@ -22,6 +24,14 @@ app.use('/user', userRoute);
 // Define the relationship
 User.hasMany(Chat);
 Chat.belongsTo(User);
+
+Group.hasMany(Chat, { foreignKey: 'GroupId' });
+Chat.belongsTo(Group, { foreignKey: 'GroupId' });
+
+
+User.belongsToMany(Group, { through: GroupMember,foreignKey: 'userId' });
+Group.belongsToMany(User, { through: GroupMember,foreignKey: 'groupId' });
+
 
 //Sync database
 sequelize.sync({force : false})

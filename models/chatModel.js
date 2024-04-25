@@ -12,16 +12,12 @@ const Chat = sequelize.define('Chat', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    senderId: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    receiverId: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    }
+   
 }, {
     freezeTableName: true // Set freezeTableName option to true
+},
+{
+    timestamps: false // Disable timestamps (createdAt and updatedAt columns)
 });
 
 // Export the Chat model

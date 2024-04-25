@@ -24,7 +24,9 @@ const authenticate = async (req, res, next) => {
 
         // Attach user to request object
         req.user = foundUser;
+        console.log("out from auth..." )
         next();
+
     } catch (err) {
         console.error('Authentication error:........', err);
         return res.status(401).json({ success: false, message: 'Invalid token' });

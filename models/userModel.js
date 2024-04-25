@@ -23,6 +23,9 @@ const User = sequelize.define('User', {
       
       }, {
         freezeTableName: true // Set freezeTableName option to true
+    },
+    {
+        timestamps: false // Disable timestamps (createdAt and updatedAt columns)
     });
       
 
