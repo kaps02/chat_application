@@ -14,6 +14,11 @@ router.post('/create-group',Authentication.authenticate,  group.createGroup);
 router.get('/get-group/:userId' ,Authentication.authenticate , group.getGroup);
 router.post('/join-group',Authentication.authenticate   , group.joinGroup);
 
+router.get('/group-members/:groupName' ,Authentication.authenticate , group.groupMember);
+router.post('/group-members/:groupName/:userName' ,Authentication.authenticate , group.makeAdmin);
+router.delete('/group-members/:groupName/:userName' ,Authentication.authenticate , group.deleteMember);
+
+
 router.post('/signup', user.createUser);
 router.post('/login' , user.postLogin);
 router.get('/login', user.getLogin);

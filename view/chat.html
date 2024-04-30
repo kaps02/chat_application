@@ -14,6 +14,18 @@
             background-color: burlywood;
         }
 
+        #group-members {
+            font-size: 12px;
+            /* Adjust the font size as needed */
+            list-style: none;
+            /* Remove bullet point */
+            position: absolute;
+            /* Position absolutely */
+            color: #45a049;
+        }
+
+
+
         .container {
             display: flex;
             width: 80%;
@@ -150,6 +162,7 @@
         <div class="chat-container">
             <div class="chat-header">
                 <h2 class="group-name">Group Name</h2>
+                <h3 id="group-members"></h3>
                 <button id="add-user-button">Add User</button>
             </div>
             <div class="chat-box" id="chatBox">
@@ -223,7 +236,7 @@
                 const listItem = document.createElement("li");
                 listItem.textContent = group.groupName;
                 listItem.setAttribute("data-group-id", group.id);
-                
+
 
                 // Handle click event for group selection (e.g., load group chat)
                 listItem.addEventListener("click", () => {
@@ -234,6 +247,7 @@
                     const groupName = document.querySelector('.group-name');
                     groupName.textContent = group.groupName;
 
+                    getMembers(group.groupName);
                     getChat(group.groupName);
 
 
@@ -241,10 +255,79 @@
                 groupList.appendChild(listItem);
             });
 
-
-
-
         }
+
+        const getMembers = async (groupName) => {
+            console.log("..getmembers.......")
+            const groupMembers = document.getElementById('group-members');
+            // Clear existing member list before adding new members
+            groupMembers.innerHTML = '';
+
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await axios.get(`/user/group-members/${groupName}`, {
+                    headers: { 'Authorization': token }
+                });
+
+                if (response && response.data) {
+                    response.data.forEach(member => {
+                        // Create a new list item for each member
+                        const listItem = document.createElement('li');
+                        listItem.textContent = member;
+                        console.log("li..", listItem.textContent);
+
+                        groupMembers.appendChild(listItem);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching group members:', error);
+            }
+
+        };
+
+        document.getElementById('group-members').addEventListener('click', (e) => {
+            const Name = e.target.textContent
+            const token = localStorage.getItem('token');
+            const groupAdmin = localStorage.getItem('userId');
+            const groupName = localStorage.getItem('groupName');
+            var result = confirm("(OK) ==> ADMIN             (CANCLE) ==> REMOVE");
+
+            console.log(Name, result)
+
+            if (result) {
+                console.log("ok", Name)
+                const response = axios.post(`/user/group-members/${groupName}/${Name}`, null, { headers: { 'Authorization': token } })
+                console.log("response ...", response)
+
+                response.then(response => {
+                    if (response.status === 200) {
+                        console.log(Name, " has been mark as Amin...")
+                    }
+                    
+                })
+            }
+            else {
+                console.log("cancle")
+                const response = axios.delete(`/user/group-members/${groupName}/${Name}`, {
+                    headers: {
+                        'Authorization': token
+                    },
+                    data: {
+                        adminCheck: groupAdmin 
+                    }
+                });
+
+                response.then(response => {
+                    if (response.status === 200) {
+                        console.log(Name, " has been deleted")
+                    }
+                })
+            }
+
+
+        })
+
 
         // Call the function to populate the group list
         getGroupList();
@@ -259,7 +342,6 @@
                 handleGroupCreation(groupName);
             }
         })
-
 
         async function handleGroupCreation(groupName) {
             const token = localStorage.getItem('token');
@@ -279,8 +361,6 @@
                 alert('Failed to create group. Please try again.');
             }
         }
-
-
 
         // Function to update local storage with new messages, keeping only the most recent ones
         function updateLocalStorageWithNewMessage(newMessage) {
@@ -337,12 +417,6 @@
 
         const getChat = async (groupId) => {
             const token = localStorage.getItem('token');
-
-            // const decodeToken = parseJwt(token);
-            // console.log("decode ......", decodeToken);
-
-            // localStorage.setItem("userId", decodeToken.id)
-            // localStorage.setItem("userName", decodeToken.name)
 
             const groupClick = document.getElementById('groupClick');
 

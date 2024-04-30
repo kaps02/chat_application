@@ -89,9 +89,9 @@ exports.createChat = async (req, res) => {
     // Create new user
     const group = await Group.findOne({ where: { groupName: req.body.groupName } });
 
-    console.log("...............................", group.dataValues.groupID );
+    console.log("...............................", group.dataValues.groupID);
 
-    await Chat.create({ message: req.body.message, UserId: req.user.id, GroupId : group.dataValues.groupID });
+    await Chat.create({ message: req.body.message, UserId: req.user.id, GroupId: group.dataValues.groupID });
     console.log("chat created successfully");
     res.status(200).json({ success: true, message: 'chat created successfully' });
 
@@ -150,10 +150,10 @@ exports.createGroup = async (req, res) => {
         }
 
         // Create entry in GroupMember table
-        await GroupMember.create({ userId, groupId: group.groupID });
+        await GroupMember.create({ userId, admin: 1, groupId: group.groupID });
         console.log("Entry created in GroupMember table");
 
-        
+
 
         res.status(201).json(group);
     } catch (error) {
@@ -172,18 +172,19 @@ exports.joinGroup = async (req, res) => {
         // Fetch the user and group instances (replace with your actual logic to fetch these)
         const user = await User.findOne({ where: { name: userName } });
         const group = await Group.findOne({ where: { groupName: groupName } });
-        //console.log(user ,group)
+        console.log(user, group)
 
         if (!user || !group) {
             console.error("User or group not found.");
             return res.status(404).json({ error: "User or group not found" }); // Handle error appropriately
         }
-        console.log("-------",user.id , group.dataValues.groupID)
+        console.log("-------", user.id, group.dataValues.groupID)
 
         // Associate the user with the group by creating a new GroupMember record
         try {
             const joinGroup = await GroupMember.create({
                 userId: user.id,
+                admin: 0,
                 groupId: group.dataValues.groupID
             });
             console.log("User joined group successfully:", joinGroup);
@@ -198,31 +199,178 @@ exports.joinGroup = async (req, res) => {
     }
 };
 
+// Get a list of groups the user is a member of
+exports.getGroup = async (req, res) => {
+    try {
+        console.log("we r in groupget.......")
+        const userId = req.params.userId;
 
-    // Get a list of groups the user is a member of
+        // Find the user
+        const user = await User.findByPk(userId, { include: Group });
 
-    exports.getGroup = async (req, res) => {
-        try {
-            console.log("we r in groupget.......")
-            const userId = req.params.userId;
-
-            // Find the user
-            const user = await User.findByPk(userId, { include: Group });
-
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-            const groups = user.Groups.map(group => ({
-                id: group.id,
-                groupName: group.groupName,
-            }));
-            console.log("user....in..getgroup..");
-            if (groups.length <= 0) {
-                return res.status(200).json({ message: "no groups yet" });
-            }
-            res.status(200).json(groups);
-        } catch (error) {
-            console.error('Error getting user groups:', error);
-            res.status(500).json({ error: 'Internal Server Error' });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
-    };
+        const groups = user.Groups.map(group => ({
+            id: group.id,
+            groupName: group.groupName,
+        }));
+        console.log("user....in..getgroup..");
+        if (groups.length <= 0) {
+            return res.status(200).json({ message: "no groups yet" });
+        }
+        res.status(200).json(groups);
+    } catch (error) {
+        console.error('Error getting user groups:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.groupMember = async (req, res) => {
+    const { groupName } = req.params;
+
+    console.log(req.params);
+
+    try {
+        // Find the group by its name
+        const group = await Group.findOne({
+            where: { groupName: groupName }
+        });
+
+        // Check if the group exists
+        if (!group) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+        //console.log(group)
+
+        const groupMembers = await GroupMember.findAll({
+            where: { groupId: group.groupID }
+
+        });
+        console.log(groupMembers)
+        // Extract user names from groupMembers
+        // Map each group member to fetch their user names
+        const userPromises = groupMembers.map(async (member) => {
+            const user = await User.findOne({
+                where: { id: member.userId },
+                attributes: ['name']
+            });
+            return user ? user.name : null;
+        });
+
+        // Wait for all user names to be resolved
+        const userNames = await Promise.all(userPromises);
+
+        // Return the list of user names
+        res.json(userNames);
+
+    } catch (error) {
+        console.error('Error fetching group members:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+
+}
+
+
+exports.makeAdmin = async (req, res) => {
+    console.log(req.params);
+    const { groupName, userName } = req.params;
+
+    try {
+        // Find the group by its name
+        const group = await Group.findOne({
+            where: { groupName: groupName }
+        });
+
+        // Check if the group exists
+        if (!group) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+
+        // Find the user by their name
+        const user = await User.findOne({
+            where: { name: userName }
+        });
+
+        // Check if the user exists
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        console.log(user.id, group.groupID)
+        // Find the GroupMember entry for the user in the group
+        const groupMember = await GroupMember.findOne({
+            where: { userId: user.id, groupId: group.groupID }
+        });
+
+        // Check if the user is a member of the group
+        if (!groupMember) {
+            return res.status(404).json({ error: 'User is not a member of the group' });
+        }
+
+        // Update the isAdmin status to 1
+        await groupMember.update({ admin: 1 });
+
+        return res.status(200).json({ message: 'Admin status updated successfully' });
+
+    } catch (error) {
+        console.error('Error updating admin status:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+exports.deleteMember = async (req, res) => {
+    console.log(req.params);
+    const { groupName, userName } = req.params;
+    const admincheck = req.body.adminCheck;
+
+    console.log(admincheck)
+
+    // Find the group by its name
+    const group = await Group.findOne({
+        where: { groupName: groupName }
+    });
+
+    // Check if the group exists
+    if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // Find the user by their name
+    const user = await User.findOne({
+        where: { name: userName }
+    });
+
+    // Check if the user exists
+    if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+
+    try {
+        console.log("admin mode...",admincheck,user.id  , group.groupID )
+        // Check if the user is an admin of the group
+        const isAdmin = await GroupMember.findOne({
+            where: { userId: admincheck, groupId: group.groupID, admin: 1 }
+        });
+    
+        // If the user is an admin, delete the GroupMember entry
+        if (isAdmin) {
+            console.log("deleting mmbr...",admincheck , group.groupID )
+            const deletedCount = await GroupMember.destroy({
+                where: { userId: user.id, groupId: group.groupID }
+            });
+    
+            if (deletedCount > 0) {
+                return res.status(200).json({ message: `${userName} removed  successfully` });
+            } else {
+                return res.status(404).json({ error: 'No member found to remove' });
+            }
+        } else {
+            return res.status(403).json({ error: 'You are not authorized to remove members' });
+        }
+    } catch (error) {
+        console.error('Error removing member:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+    
+}
+

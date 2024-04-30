@@ -9,7 +9,10 @@ const GroupMember = sequelize.define('GroupMember', {
     primaryKey: true,
     autoIncrement: true
   },
-  
+  admin : {
+    type: DataTypes.BOOLEAN
+
+  }
   
 });
 
