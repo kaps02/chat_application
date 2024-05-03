@@ -147,6 +147,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
 
 </head>
 
@@ -177,6 +178,36 @@
 
 
     <script>
+
+        const socket = io(); // Connect to the Socket.IO server (backend)
+
+        const name = localStorage.getItem('userName');
+        console.log('Current user:', name); // Log the retrieved username
+        socket.emit('new-user', name);
+
+        socket.on('chat-message', data => {
+            console.log('Received message:', data);
+            // Update the UI with the received message
+            displayMessage(data.name, data.message);
+        });
+
+        socket.on('user-connected', name => {
+            console.log('User connected:', name);
+            //alert(`${name} connected`);
+        });
+
+        socket.on('user-disconnected', name => {
+            console.log('User disconnected:', name);
+           // alert(`${name} disconnected`);
+        });
+
+        socket.on('send-chat-message', () => {
+            console.log('Call to getchat...');
+            getChat();
+        });
+
+
+
 
         const MAX_MESSAGES_IN_LOCAL_STORAGE = 10;
 
@@ -304,7 +335,7 @@
                     if (response.status === 200) {
                         console.log(Name, " has been mark as Amin...")
                     }
-                    
+
                 })
             }
             else {
@@ -314,7 +345,7 @@
                         'Authorization': token
                     },
                     data: {
-                        adminCheck: groupAdmin 
+                        adminCheck: groupAdmin
                     }
                 });
 
@@ -324,10 +355,7 @@
                     }
                 })
             }
-
-
         })
-
 
         // Call the function to populate the group list
         getGroupList();
@@ -360,58 +388,6 @@
                 console.error('Error creating group...:', error.response);
                 alert('Failed to create group. Please try again.');
             }
-        }
-
-        // Function to update local storage with new messages, keeping only the most recent ones
-        function updateLocalStorageWithNewMessage(newMessage) {
-            console.log("new message......of update", newMessage)
-            let storedMessages = JSON.parse(localStorage.getItem('messages')) || [];
-            console.log("newmssge...", newMessage);
-            //storedMessages = '';
-            // Append the new message to the end of the array
-            storedMessages.push(newMessage);
-
-            // Keep only the most recent MAX_MESSAGES_IN_LOCAL_STORAGE messages
-            if (storedMessages.length > MAX_MESSAGES_IN_LOCAL_STORAGE) {
-                storedMessages = storedMessages.slice(storedMessages.length - MAX_MESSAGES_IN_LOCAL_STORAGE);
-            }
-            console.log("updtLS ,", storedMessages);
-            // Update local storage with the modified array
-            localStorage.setItem('messages', JSON.stringify(storedMessages));
-        }
-
-        // Function to retrieve messages from local storage
-        function getMessagesFromLocalStorage() {
-            const messagesString = localStorage.getItem('messages');
-            console.log("getlocal...", messagesString);
-            return messagesString ? JSON.parse(messagesString) : [];
-        }
-
-        // Function to display messages on the frontend
-        function displayMessages(messages) {
-            const chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML = '';
-
-            const token = localStorage.getItem('token');
-
-
-            console.log(messages)
-            messages = messages.filter(message => message !== undefined)
-
-            console.log("---------", messages)
-
-            messages.forEach(message => {
-
-                const messageElement = document.createElement('div');
-                messageElement.textContent = ` ${message.senderName} : ${message.message}`;
-                messageElement.classList.add('message');
-                if (chatBox.childElementCount % 2 === 0) {
-                    messageElement.classList.add('dark-background');
-                } else {
-                    messageElement.classList.add('bright-background');
-                }
-                chatBox.appendChild(messageElement);
-            });
         }
 
 
@@ -456,6 +432,56 @@
         };
 
 
+        // Function to update local storage with new messages
+        function updateLocalStorageWithNewMessage(newMessage) {
+            let storedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+            storedMessages.push(newMessage);
+
+            if (storedMessages.length > MAX_MESSAGES_IN_LOCAL_STORAGE) {
+                storedMessages = storedMessages.slice(storedMessages.length - MAX_MESSAGES_IN_LOCAL_STORAGE);
+            }
+
+            localStorage.setItem('messages', JSON.stringify(storedMessages));
+        }
+
+        // Function to retrieve messages from local storage
+        function getMessagesFromLocalStorage() {
+            const messagesString = localStorage.getItem('messages');
+            return messagesString ? JSON.parse(messagesString) : [];
+        }
+
+        // Function to display messages on the frontend
+        function displayMessages(messages) {
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML = '';
+
+            messages.forEach(message => {
+                displayMessage(message.senderName, message.message);
+            });
+        }
+        function displayMessage(senderName, message) {
+            updateLocalStorageWithNewMessage({ senderName, message });
+
+            const chatBox = document.getElementById('chatBox');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${senderName}: ${message}`;
+            if (chatBox.childElementCount % 2 === 0) {
+                    messageElement.classList.add('dark-background');
+                } else {
+                    messageElement.classList.add('bright-background');
+                }
+            
+            messageElement.classList.add('message');
+            chatBox.appendChild(messageElement);
+
+            // Scroll to the bottom of the chat box to show the new message
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Update local storage with the new message
+            
+        }
+
+
         document.addEventListener('DOMContentLoaded', async () => {
             // Call getChat initially to fetch messages and display them
             const token = localStorage.getItem('token');
@@ -471,7 +497,7 @@
             getChat();
 
             // Call getChat every 20 seconds
-            setInterval(getChat, 50000);
+            //setInterval(getChat, 50000);
 
             const sendChat = document.getElementById('send');
 
@@ -495,9 +521,14 @@
                         // Clear message input
                         messageInput.value = '';
 
+                        updateLocalStorageWithNewMessage({ senderName: localStorage.getItem('userName'), message });
+
                         // Scroll to the bottom of the chat box
                         const chatBox = document.getElementById('chatBox');
                         chatBox.scrollTop = chatBox.scrollHeight;
+
+                        socket.emit('send-chat-message', message)
+
                     } else {
                         console.error('Chat message send failed');
                     }

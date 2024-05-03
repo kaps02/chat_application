@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const userRoute = require('./route/userRoute');
-//const chatRoute = require('./route/chatRoute');
+const socketIo = require('socket.io');
 const bodyParser = require('body-parser');
 const sequelize = require('./config/database');
 const cors = require('cors');
@@ -11,14 +11,11 @@ const Group = require('./models/groupModel');
 const GroupMember = require('./models/groupmemberModel');
 require('dotenv').config();
 
-
-
-const app = express(); // Declare 'app' as a variable
+const app = express();
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "view")));
-
-app.use(cors({origin: '*'}))
+app.use(cors({ origin: '*' }));
 app.use('/user', userRoute);
 
 // Define the relationship
@@ -28,21 +25,52 @@ Chat.belongsTo(User);
 Group.hasMany(Chat, { foreignKey: 'GroupId' });
 Chat.belongsTo(Group, { foreignKey: 'GroupId' });
 
-
-User.belongsToMany(Group, { through: GroupMember,foreignKey: 'userId' });
-Group.belongsToMany(User, { through: GroupMember,foreignKey: 'groupId' });
-
+User.belongsToMany(Group, { through: GroupMember, foreignKey: 'userId' });
+Group.belongsToMany(User, { through: GroupMember, foreignKey: 'groupId' });
 
 //Sync database
-sequelize.sync({force : false})
-.then(() => {
-    console.log('DB synced');
-})
-.catch(err => {
-    console.error('Error syncing  database: ', err);
+sequelize.sync({ force: false })
+    .then(() => {
+        console.log('DB synced');
+    })
+    .catch(err => {
+        console.error('Error syncing database: ', err);
+    });
+
+// Create WebSocket server
+const server = require('http').createServer(app);
+const io = socketIo(server);
+
+const users = {}
+
+io.on('connection', socket => {
+    console.log('New connection:', socket.id); // Log new socket connection
+
+    socket.on('new-user', name => {
+        console.log('New user:', name);
+        users[socket.id] = name
+        socket.broadcast.emit('user-connected', name)
+    });
+
+    socket.on('send-chat-message', message => {
+        console.log('Chat message:', message);
+        io.emit('chat-message', { message: message, name: users[socket.id] });
+        //io.emit('chat-message', { message, name: senderName });
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', users[socket.id]);
+        socket.broadcast.emit('user-disconnected', users[socket.id]);
+        delete users[socket.id];
+    });
 });
 
-const port = process.env.PORT;
-app.listen(port, () => {
-    console.log(`Server running on port ${port}..........`);
+
+
+//io.emit('new-message', { text: 'Hello, world!' });
+
+
+const port = process.env.PORT || 8000;
+server.listen(port, () => {     //setver.listen
+    console.log(`Server running on port ${port}`);
 });

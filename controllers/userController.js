@@ -104,7 +104,7 @@ exports.readChat = async (req, res) => {
         const GroupName = req.params.groupId;
 
         const group = await Group.findOne({ where: { groupName: GroupName } }) || 1;
-        console.log("GroupId......", group);
+        //console.log("GroupId......", group);
 
 
         // Read chat messages from the database for the logged-in user where the user is the sender
@@ -123,7 +123,7 @@ exports.readChat = async (req, res) => {
             len: len
         }));
 
-        console.log("Chat read successfully", chatMessages);
+       // console.log("Chat read successfully", chatMessages);
         res.status(200).json({ success: true, messages: chatMessages });
     } catch (error) {
         console.error("Error reading chat:", error);
@@ -172,7 +172,7 @@ exports.joinGroup = async (req, res) => {
         // Fetch the user and group instances (replace with your actual logic to fetch these)
         const user = await User.findOne({ where: { name: userName } });
         const group = await Group.findOne({ where: { groupName: groupName } });
-        console.log(user, group)
+        //console.log(user, group)
 
         if (!user || !group) {
             console.error("User or group not found.");
@@ -187,7 +187,7 @@ exports.joinGroup = async (req, res) => {
                 admin: 0,
                 groupId: group.dataValues.groupID
             });
-            console.log("User joined group successfully:", joinGroup);
+            //console.log("User joined group successfully:", joinGroup);
             return res.status(200).json({ message: "User joined group successfully" });
         } catch (error) {
             console.error("Error joining user to group:", error);
@@ -247,7 +247,7 @@ exports.groupMember = async (req, res) => {
             where: { groupId: group.groupID }
 
         });
-        console.log(groupMembers)
+        //console.log(groupMembers)
         // Extract user names from groupMembers
         // Map each group member to fetch their user names
         const userPromises = groupMembers.map(async (member) => {
