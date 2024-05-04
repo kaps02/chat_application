@@ -9,6 +9,11 @@ const Chat = require('./models/chatModel');
 const User = require('./models/userModel');
 const Group = require('./models/groupModel');
 const GroupMember = require('./models/groupmemberModel');
+const {startArchiveJob} = require('./cronjobs/archiveMessages');
+
+
+startArchiveJob();
+
 require('dotenv').config();
 
 const app = express();

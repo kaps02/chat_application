@@ -12,13 +12,22 @@ const Chat = sequelize.define('Chat', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
+    }
    
-}, {
-    freezeTableName: true // Set freezeTableName option to true
-},
+}, 
 {
-    timestamps: false // Disable timestamps (createdAt and updatedAt columns)
-});
+    freezeTableName: true // Set freezeTableName option to true
+}
+);
 
 // Export the Chat model
 module.exports = Chat;
