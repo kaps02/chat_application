@@ -9,6 +9,8 @@ const Authentication = require('../middleware/auth')
 
 router.get('/api/chat/:groupId' , Authentication.authenticate , chat.readChat);
 router.post('/message' , Authentication.authenticate , chat.createChat);
+router.post('/message-image' , Authentication.authenticate , chat.sendImage);
+
 
 router.post('/create-group',Authentication.authenticate,  group.createGroup);
 router.get('/get-group/:userId' ,Authentication.authenticate , group.getGroup);

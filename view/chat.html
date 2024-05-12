@@ -171,6 +171,7 @@
             </div>
             <div class="input-box">
                 <input type="text" id="messageInput" placeholder="Type your message...">
+                <input type="file" id="imageInput" accept="image/*" >
                 <input type="submit" value="Send" id="send">
             </div>
         </div>
@@ -274,6 +275,7 @@
 
                     console.log("Selected group:", group.groupName);
                     localStorage.setItem('groupName', group.groupName);
+                    localStorage.setItem('groupId', group.id);
 
                     const groupName = document.querySelector('.group-name');
                     groupName.textContent = group.groupName;
@@ -494,6 +496,8 @@
 
             const groupClick = document.getElementById('groupClick');
 
+            console.log(groupClick)
+
             getChat();
 
             // Call getChat every 20 seconds
@@ -508,15 +512,29 @@
                 try {
                     const messageInput = document.getElementById('messageInput');
                     const message = messageInput.value.trim();
-                    if (!message) return;
+                    //if (!message) return;
+
+                    const imageInput = document.getElementById('imageInput');
+                    const image = imageInput.value.trim();
 
                     const token = localStorage.getItem('token');
                     const groupName = localStorage.getItem('groupName');
+                    const groupId = localStorage.getItem('groupId');
+                    console.log(" ..." , groupId)
                     console.log('sending message axios...');        // axios............
 
-                    const response = await axios.post('/user/message', { message, groupName }, { headers: { 'Authorization': token } });
-                    console.log('Chat message sent successfully:', response.data);
+                    let response = '';
 
+                    if (message){
+                         response = await axios.post('/user/message', { message, groupName }, { headers: { 'Authorization': token } });
+                        console.log('Chat message sent successfully:', response.data);
+                    }
+                    else{
+                         response = await axios.post('/user/message-image', { image, groupId }, { headers: { 'Authorization': token } });
+                        console.log('Chat image sent successfully:', response.data);
+
+                    }
+                    
                     if (response.status === 200) {
                         // Clear message input
                         messageInput.value = '';

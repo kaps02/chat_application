@@ -9,7 +9,7 @@ const Chat = require('./models/chatModel');
 const User = require('./models/userModel');
 const Group = require('./models/groupModel');
 const GroupMember = require('./models/groupmemberModel');
-const {startArchiveJob} = require('./cronjobs/archiveMessages');
+const {startArchiveJob} = require('./sevices/archiveMessages');
 
 
 startArchiveJob();
@@ -24,11 +24,11 @@ app.use(cors({ origin: '*' }));
 app.use('/user', userRoute);
 
 // Define the relationship
-User.hasMany(Chat);
-Chat.belongsTo(User);
+User.hasMany(Chat , { foreignKey: 'groupId' });
+Chat.belongsTo(User,{ foreignKey: 'userId' });
 
-Group.hasMany(Chat, { foreignKey: 'GroupId' });
-Chat.belongsTo(Group, { foreignKey: 'GroupId' });
+Group.hasMany(Chat, { foreignKey: 'groupId' });
+Chat.belongsTo(Group, { foreignKey: 'groupId' });
 
 User.belongsToMany(Group, { through: GroupMember, foreignKey: 'userId' });
 Group.belongsToMany(User, { through: GroupMember, foreignKey: 'groupId' });
@@ -70,12 +70,9 @@ io.on('connection', socket => {
     });
 });
 
-
-
 //io.emit('new-message', { text: 'Hello, world!' });
 
-
 const port = process.env.PORT || 8000;
-server.listen(port, () => {     //setver.listen
+server.listen(port, () => {     //server.listen
     console.log(`Server running on port ${port}`);
 });

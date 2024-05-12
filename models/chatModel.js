@@ -12,6 +12,15 @@ const Chat = sequelize.define('Chat', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    imageUrl: {
+        type: DataTypes.STRING, // Field to store the URL of the uploaded image
+        allowNull: true // Allow null to accommodate text messages
+    },
+    isImage: {
+        type: DataTypes.BOOLEAN, // Boolean flag to differentiate between text and image messages
+        allowNull: false,
+        defaultValue: false // Default value is false (text message)
+    },
     createdAt: {
         type: DataTypes.DATE,
         allowNull: false,

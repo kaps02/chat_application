@@ -6,6 +6,7 @@ const Chat = require('../models/chatModel');
 const Group = require('../models/groupModel');
 const GroupMember = require('../models/groupmemberModel');
 const jwt = require('jsonwebtoken');
+const awsService = require('../sevices/awsServices')
 //const sequelize = require('sequelize');
 
 // Function to generate JWT token
@@ -19,6 +20,13 @@ exports.getUser = (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'view', 'signup.html'));
 };
 
+exports.getLogin = (req, res) => {
+    res.sendFile('login.html', { root: './view' });
+}
+
+exports.getchat = async (req, res) => {
+    res.sendFile('chat.html', { root: './view' });
+}
 
 // Controller for user signup
 exports.createUser = async (req, res) => {
@@ -46,10 +54,6 @@ exports.createUser = async (req, res) => {
         console.error('Error:', err);
         res.status(500).json({ success: false, message: 'Internal server error in controller....' });
     }
-}
-
-exports.getLogin = (req, res) => {
-    res.sendFile('login.html', { root: './view' });
 }
 
 // Controller for user login
@@ -80,23 +84,17 @@ exports.postLogin = async (req, res) => {
     }
 };
 
-exports.getchat = async (req, res) => {
-    res.sendFile('chat.html', { root: './view' });
-}
-
-
 exports.createChat = async (req, res) => {
     // Create new user
     const group = await Group.findOne({ where: { groupName: req.body.groupName } });
 
-    console.log("...............................", group.dataValues.groupID);
+    console.log("...............................", group.id);
 
-    await Chat.create({ message: req.body.message, UserId: req.user.id, GroupId: group.dataValues.groupID });
+    await Chat.create({ message: req.body.message, userId: req.user.id, groupId: group.id , isImage : false , imageUrl:null});
     console.log("chat created successfully");
     res.status(200).json({ success: true, message: 'chat created successfully' });
 
 }
-
 
 exports.readChat = async (req, res) => {
     try {
@@ -106,14 +104,13 @@ exports.readChat = async (req, res) => {
         const group = await Group.findOne({ where: { groupName: GroupName } }) || 1;
         //console.log("GroupId......", group);
 
-
         // Read chat messages from the database for the logged-in user where the user is the sender
         const messages = await Chat.findAll({
             where: {
-                GroupId: group.groupID
+                groupId: group.id
             },
             include: [{ model: User, attributes: ['name'] }], // Include User model to fetch sender's name
-            attributes: ['message', 'groupID'] // Select only the 'message'  and groupId attribute from Chat model
+            attributes: ['message', 'groupId'] // Select only the 'message'  and groupId attribute from Chat model
         });
         const len = messages.length;
         // Extract message content and sender's name from the messages array
@@ -123,7 +120,7 @@ exports.readChat = async (req, res) => {
             len: len
         }));
 
-       // console.log("Chat read successfully", chatMessages);
+        // console.log("Chat read successfully", chatMessages);
         res.status(200).json({ success: true, messages: chatMessages });
     } catch (error) {
         console.error("Error reading chat:", error);
@@ -150,7 +147,7 @@ exports.createGroup = async (req, res) => {
         }
 
         // Create entry in GroupMember table
-        await GroupMember.create({ userId, admin: 1, groupId: group.groupID });
+        await GroupMember.create({ userId, admin: 1, groupId: group.id });
         console.log("Entry created in GroupMember table");
 
 
@@ -178,14 +175,14 @@ exports.joinGroup = async (req, res) => {
             console.error("User or group not found.");
             return res.status(404).json({ error: "User or group not found" }); // Handle error appropriately
         }
-        console.log("-------", user.id, group.dataValues.groupID)
+        console.log("-------", user.id, group.id)
 
         // Associate the user with the group by creating a new GroupMember record
         try {
             const joinGroup = await GroupMember.create({
                 userId: user.id,
                 admin: 0,
-                groupId: group.dataValues.groupID
+                groupId: group.id
             });
             //console.log("User joined group successfully:", joinGroup);
             return res.status(200).json({ message: "User joined group successfully" });
@@ -244,7 +241,7 @@ exports.groupMember = async (req, res) => {
         //console.log(group)
 
         const groupMembers = await GroupMember.findAll({
-            where: { groupId: group.groupID }
+            where: { groupId: group.id }
 
         });
         //console.log(groupMembers)
@@ -296,10 +293,10 @@ exports.makeAdmin = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        console.log(user.id, group.groupID)
+        console.log(user.id, group.id)
         // Find the GroupMember entry for the user in the group
         const groupMember = await GroupMember.findOne({
-            where: { userId: user.id, groupId: group.groupID }
+            where: { userId: user.id, groupId: group.id }
         });
 
         // Check if the user is a member of the group
@@ -346,19 +343,19 @@ exports.deleteMember = async (req, res) => {
     }
 
     try {
-        console.log("admin mode...",admincheck,user.id  , group.groupID )
+        console.log("admin mode...", admincheck, user.id, group.groupID)
         // Check if the user is an admin of the group
         const isAdmin = await GroupMember.findOne({
-            where: { userId: admincheck, groupId: group.groupID, admin: 1 }
+            where: { userId: admincheck, groupId: group.id, admin: 1 }
         });
-    
+
         // If the user is an admin, delete the GroupMember entry
         if (isAdmin) {
-            console.log("deleting mmbr...",admincheck , group.groupID )
+            console.log("deleting mmbr...", admincheck, group.id)
             const deletedCount = await GroupMember.destroy({
-                where: { userId: user.id, groupId: group.groupID }
+                where: { userId: user.id, groupId: group.id }
             });
-    
+
             if (deletedCount > 0) {
                 return res.status(200).json({ message: `${userName} removed  successfully` });
             } else {
@@ -371,6 +368,31 @@ exports.deleteMember = async (req, res) => {
         console.error('Error removing member:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
-    
+
 }
 
+exports.sendImage = async (request, response, next) => {
+    try { console.log("int the image send...")
+        const user = request.user;
+        const image = request.body.image;
+        const  groupId  = request.body.groupId;
+        console.log("image , " , image);
+        const filename = `chat-images/group${groupId}/user${user.id}/${Date.now()}_${image.originalname}`;
+        const imageUrl = await awsService.uploadToS3(image.buffer, filename)
+        //const imageUrl = filename
+       console.log(groupId);
+            await Chat.create({
+                message: "imageUrl",
+                userId :user.id,
+                groupId : groupId,
+                imageUrl : imageUrl,
+                isImage: true
+            })
+        
+        return response.status(200).json({ message: "image saved to database succesfully" })
+
+    } catch (error) {
+        console.log(error);
+        return response.status(500).json({ message: 'Internal Server error! in sendimage..' })
+    }
+}

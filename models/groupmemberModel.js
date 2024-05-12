@@ -4,7 +4,7 @@ const User = require('./userModel'); // Import the User model if not already imp
 const Group = require('./groupModel'); // Import the Group model if not already imported
 
 const GroupMember = sequelize.define('GroupMember', {
-  groupMemberID: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
