@@ -17,20 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.status === 200) {
                     localStorage.setItem('token', response.data.token);
-                    
+
                     alert(`${email} loged in successfully`);
-                    
+                    window.location.href = '/chat.html';
+
                 } else {
                     console.error('Login failed');
-                    // Optionally, display an error message to the user
                 }
             } catch (error) {
                 if (error.response.status === 401) {
                     alert('incorrect password.');
                     console.log("incorrect password");
-                } 
+                }
                 console.error('Error:', error);
-                // Optionally, display an error message to the user
             }
         });
     }
